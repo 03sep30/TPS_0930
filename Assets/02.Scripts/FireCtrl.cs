@@ -12,10 +12,15 @@ public class FireCtrl : MonoBehaviour
     public Transform firePos;
     // 총소리에 사용할 오디오 음원
     public AudioClip fireSfx;
+
     // AudioSource 컴포넌트를 저장할 변수
     private new AudioSource audio;
     // Muzzle Flash의 MeshRenderer 컴포넌트
     private MeshRenderer muzzleFlash;
+
+    // Raycast 결괏값을 저장하기 위한 구조체 선언
+    private RaycastHit hit;
+
     void Start()
     {
         audio = GetComponent<AudioSource>();
@@ -24,14 +29,29 @@ public class FireCtrl : MonoBehaviour
         // 처음 시작할 때 비활성화
         muzzleFlash.enabled = false;
     }
+
     void Update()
     {
+        // Ray를 시각적으로 표시하기 위해 사용
+        Debug.DrawRay(firePos.position, firePos.forward * 10.0f, Color.green);
         // 마우스 왼쪽 버튼을 클릭했을 때 Fire 함수 호출
         if (Input.GetMouseButtonDown(0))
         {
             Fire();
+            // Ray를 발사
+            if (Physics.Raycast(firePos.position, // 광선의 발사 원점
+            firePos.forward, // 광선의 발사 방향
+            out hit, // 광선에 맞은 결과 데이터
+            10.0f, // 광선의 거리
+            1 << 6)) // 감지하는 범위인 레이어 마스크
+
+            {
+                Debug.Log($"Hit={hit.transform.name}");
+                hit.transform.GetComponent<MonsterCtrl>()?.OnDamage(hit.point, hit.normal);
+            }
         }
     }
+
     void Fire()
     {
         // Bullet 프리팹을 동적으로 생성(생성할 객체, 위치, 회전)
@@ -41,6 +61,7 @@ public class FireCtrl : MonoBehaviour
         // 총구 화염 효과 코루틴 함수 호출
         StartCoroutine(ShowMuzzleFlash());
     }
+
     IEnumerator ShowMuzzleFlash()
     {
         // 오프셋 좌푯값을 랜덤 함수로 생성
